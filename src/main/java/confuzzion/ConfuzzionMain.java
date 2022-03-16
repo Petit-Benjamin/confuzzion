@@ -23,6 +23,9 @@ import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 
+/**
+ * Main class entry.
+ */
 public class ConfuzzionMain {
     private Path resultFolder;
 
@@ -38,6 +41,10 @@ public class ConfuzzionMain {
         this.resultFolder = resultFolder;
     }
 
+    /**
+     * Call this to start fuzzing a JVM.
+     * @param args configuration args.
+     */
     public static void main(String args[]) {
         final Options options = configParameters();
         CommandLineParser parser = new DefaultParser();

@@ -43,6 +43,11 @@ public class Util {
         return result;
     }
 
+    /**
+     * Loads a class by name.
+     * @param name class name.
+     * @return a SootClass representation of the requested class.
+     */
     public static SootClass getOrLoadSootClass(String name) {
         return Scene.v().loadClassAndSupport(name);
     }

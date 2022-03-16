@@ -4,6 +4,9 @@ import soot.SootMethod;
 
 import org.apache.commons.math3.distribution.BinomialDistribution;
 
+/**
+ * The class that defines the collection of the method execution results.
+ */
 public class MethodComplexity {
     private final static double confidence = 0.95;
 

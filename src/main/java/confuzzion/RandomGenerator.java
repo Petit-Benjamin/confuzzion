@@ -61,6 +61,7 @@ public class RandomGenerator {
 
     /**
      * Constructor with specified java.util.Random source
+     *
      * @param rand the Random source to use
      */
     public RandomGenerator(String targetClasses[], Random rand) {
@@ -81,6 +82,12 @@ public class RandomGenerator {
         }
     }
 
+    /**
+     * Loads class by name using soot and extracts its callable methods in {@code callableMethods}.
+     *
+     * @param className class to add. The name will be added to {@code className}.
+     * @throws: RuntimeException – if the resolution of the class is at an insufficient level - SIGNATURES.
+     */
     public void addStrClass(String className) {
         strClasses.add(className);
         SootClass sClass = Util.getOrLoadSootClass(className);
@@ -102,6 +109,15 @@ public class RandomGenerator {
         }
     }
 
+    /**
+     * Adds a method execution result to.
+     *
+     * @param method the executed method.
+     * @param success {@code frue} if the execution was successful, otherwise {@code false}.
+     *
+     * @see MethodComplexity#newSuccess()
+     * @see MethodComplexity#newFailure()
+     */
     public void addMethodCallStatus(SootMethod method, boolean success) {
         for (MethodComplexity mc : callableMethods) {
             if (mc.getMethod().equals(method)) {
@@ -115,6 +131,16 @@ public class RandomGenerator {
         }
     }
 
+    /**
+     * Selects a method among the {@code callableMethods} list.
+     * The randomness selection depends on the flag {@code confuzzion.ConfuzzionOptions#use_uniform_distribution_for_methods}:
+     * if {@code true} the selection will be random, otherwise the methods with heigher complexity will be favoured.
+     * Complexity is calculated leveraging the execution results of the previous runs.
+     *
+     *
+     * @return a method from {@code callableMethods}.
+     * @see MethodComplexity
+     */
     public SootMethod getRandomExternalMethod() {
         if (ConfuzzionOptions.v().use_uniform_distribution_for_methods) {
             return callableMethods.get(this.nextUint(callableMethods.size())).getMethod();
@@ -162,6 +188,16 @@ public class RandomGenerator {
         }
     }
 
+    /**
+     * Selects a method among {@code callableMethods} list, or the generated ones in the seed.
+     *
+     * @param className Class (generated) from which the method will be selected (in 1% of the cases):
+     *                  It's not guaranteed that the method will be selected from this class.
+     *                  The selector will randomly choose to return a method from
+     *                  {@code className} or the {@code callableMethods}(1% Vs 99% p).
+     * @return method.
+     * @see RandomGenerator#getRandomExternalMethod()
+     */
     public SootMethod getRandomMethod(String className) {
         // p = 1/100 => call a local method
         if (this.nextUint(100) == 0) {
@@ -239,6 +275,7 @@ public class RandomGenerator {
 
     /**
      * Get a pseudo-random number between 0 (included) and maxLimit (excluded)
+     *
      * @param maxLimit
      * @return
      */
@@ -262,10 +299,11 @@ public class RandomGenerator {
      * Returns a random number depending on each cumulative probability.
      * Ex: randLimits(0.1, 0.5, 1.0) can return 0, 1 or 2 with probabilities
      * 0.1, 0.4, 0.5
-     * @param  ...limits list of probabilities that ends with 1.0
-     * @return           random number depending on probabilities
+     *
+     * @param ...limits list of probabilities that ends with 1.0
+     * @return random number depending on probabilities
      */
-    public int randLimits(double ...limits) {
+    public int randLimits(double... limits) {
         double rr = rand.nextDouble();
 
         int i = 0;
@@ -281,8 +319,9 @@ public class RandomGenerator {
 
     /**
      * Randomly generate a constant for the appropriate type
-     * @param  type Type of the constant
-     * @return      Value that is a constant of appropriate type
+     *
+     * @param type Type of the constant
+     * @return Value that is a constant of appropriate type
      */
     public Value randConstant(Type type) {
         Value val = null;
@@ -312,6 +351,7 @@ public class RandomGenerator {
 
     /**
      * Select a random class string
+     *
      * @param className
      * @param can_be_itself if true then result can be className
      * @return
@@ -338,6 +378,7 @@ public class RandomGenerator {
 
     /**
      * Randomly generate a StringConstant from field/methods/classes names
+     *
      * @param className
      * @return
      */
@@ -345,32 +386,33 @@ public class RandomGenerator {
         // Choose a random class
         SootClass sootClass = Util.getOrLoadSootClass(this.randClassName(className, true));
         String value = null;
-        switch(this.nextUint(3)) {
-        case 0:
-            // Choose a random field name
-            SootField field = this.randElement(sootClass.getFields());
-            if (field != null) {
-                value = field.getName();
-                break;
-            } //else: fall through
-        case 1:
-            // Choose a random method name
-            List<SootMethod> methods = sootClass.getMethods();
-            if (methods.size() > 0) {
-                SootMethod method = methods.get(this.nextUint(methods.size()));
-                value = method.getName();
-                break;
-            } //else: fall through
-        case 2:
-        default:
-            // Choose the className
-            value = sootClass.getShortName();
+        switch (this.nextUint(3)) {
+            case 0:
+                // Choose a random field name
+                SootField field = this.randElement(sootClass.getFields());
+                if (field != null) {
+                    value = field.getName();
+                    break;
+                } //else: fall through
+            case 1:
+                // Choose a random method name
+                List<SootMethod> methods = sootClass.getMethods();
+                if (methods.size() > 0) {
+                    SootMethod method = methods.get(this.nextUint(methods.size()));
+                    value = method.getName();
+                    break;
+                } //else: fall through
+            case 2:
+            default:
+                // Choose the className
+                value = sootClass.getShortName();
         }
         return StringConstant.v(value);
     }
 
     /**
      * Return a random element in chain
+     *
      * @param <E>
      * @param chain
      * @return
@@ -392,18 +434,19 @@ public class RandomGenerator {
 
     /**
      * Randomly select a primitive type
+     *
      * @return A random primitive type
      */
     public Type randPrimType() {
         Type[] types = {
-            BooleanType.v(),
-            ByteType.v(),
-            CharType.v(),
-            DoubleType.v(),
-            FloatType.v(),
-            IntType.v(),
-            LongType.v(),
-            ShortType.v()
+                BooleanType.v(),
+                ByteType.v(),
+                CharType.v(),
+                DoubleType.v(),
+                FloatType.v(),
+                IntType.v(),
+                LongType.v(),
+                ShortType.v()
         };
 
         return types[this.nextUint(types.length)];
@@ -411,8 +454,9 @@ public class RandomGenerator {
 
     /**
      * Randomly choose a reference type
-     * @param  className current class name
-     * @return           random RefType
+     *
+     * @param className current class name
+     * @return random RefType
      */
     public Type randRefType(String className) {
         return Util.getOrLoadSootClass(this.randClassName(className, false)).getType();
@@ -420,10 +464,11 @@ public class RandomGenerator {
 
     /**
      * Randomly choose a type between VoidType, RefType and PrimType
-     * @param  className current class name
-     * @param  canBeVoid if true result may be VoidType
-     * @param  canBePrimitive if true result may be PrimType
-     * @return           random type
+     *
+     * @param className      current class name
+     * @param canBeVoid      if true result may be VoidType
+     * @param canBePrimitive if true result may be PrimType
+     * @return random type
      */
     public Type randType(String className, boolean canBeVoid, boolean canBePrimitive) {
         if (canBeVoid && rand.nextBoolean()) {
@@ -437,8 +482,9 @@ public class RandomGenerator {
 
     /**
      * Generate a list of random types
+     *
      * @param className current class name
-     * @param number number of types to return
+     * @param number    number of types to return
      * @return
      */
     public List<Type> randTypes(String className, int number) {
@@ -451,9 +497,10 @@ public class RandomGenerator {
 
     /**
      * Randomly choose modifiers
-     * @param  canBeStatic if true result may have the static modifier
-     * @param  canBeVolatile if true result may have the volatile modifier
-     * @return             random modifiers
+     *
+     * @param canBeStatic   if true result may have the static modifier
+     * @param canBeVolatile if true result may have the volatile modifier
+     * @return random modifiers
      */
     public int randModifiers(Boolean canBeStatic, Boolean canBeVolatile) {
         int modifiers = 0;
@@ -469,17 +516,17 @@ public class RandomGenerator {
         }
 
         switch (this.nextUint(4)) {
-        case 0:
-            /* no modifier : java default */
-            break;
-        case 1:
-            modifiers |= Modifier.PUBLIC;
-            break;
-        case 2:
-            modifiers |= Modifier.PRIVATE;
-            break;
-        default:
-            modifiers |= Modifier.PROTECTED;
+            case 0:
+                /* no modifier : java default */
+                break;
+            case 1:
+                modifiers |= Modifier.PUBLIC;
+                break;
+            case 2:
+                modifiers |= Modifier.PRIVATE;
+                break;
+            default:
+                modifiers |= Modifier.PROTECTED;
         }
 
         return modifiers;
@@ -487,8 +534,9 @@ public class RandomGenerator {
 
     /**
      * Randomly choose a local from a Chain<Local>
-     * @param  locals chain of locals
-     * @return        reference to one Local or null
+     *
+     * @param locals chain of locals
+     * @return reference to one Local or null
      */
     public Local randLocal(Chain<Local> locals) {
         if (locals.size() <= 0) {
@@ -506,6 +554,7 @@ public class RandomGenerator {
 
     /**
      * Randomly choose a local of the specified type
+     *
      * @param locals
      * @param type
      * @return
@@ -529,8 +578,9 @@ public class RandomGenerator {
 
     /**
      * Randomly choose a local of type RefType that is a Mutant class or a target class
-     * @param  locals chain of locals
-     * @param  canBeAnyRefType if true then can return any RefType Local provided, not only a target class or Mutant class type
+     *
+     * @param locals          chain of locals
+     * @param canBeAnyRefType if true then can return any RefType Local provided, not only a target class or Mutant class type
      * @return Local of type RefType
      */
     public Local randLocalRef(Chain<Local> locals, boolean canBeAnyRefType) {
@@ -538,7 +588,7 @@ public class RandomGenerator {
         for (Local loc : locals) {
             Type type = loc.getType();
             if (type instanceof RefType) {
-                String className = ((RefType)type).getClassName();
+                String className = ((RefType) type).getClassName();
                 if (canBeAnyRefType || strClasses.contains(className) || strMutants.contains(className)) {
                     localRefs.add(loc);
                 }
