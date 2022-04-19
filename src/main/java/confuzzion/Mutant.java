@@ -43,6 +43,7 @@ public class Mutant {
 
     /**
      * Constructor
+     *
      * @param className ex: Test0
      */
     public Mutant(SootClass sClass) {
@@ -63,6 +64,7 @@ public class Mutant {
 
     /**
      * Generate bytecode to an output stream
+     *
      * @param stream output
      */
     public void toBytecode(OutputStream stream) {
@@ -84,15 +86,30 @@ public class Mutant {
         }
     }
 
+    // MODIF BENJA
+    public void toJavacode(OutputStream stream) {
+        BafASMBackend backend = new BafASMBackend(sClass, ConfuzzionOptions.v().java_version);
+        backend.generateClassFile(stream);
+        try {
+            stream.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
     /**
      * Save the SootClass as a .class file
-     * @param  folder destination folder that already exists
+     *
+     * @param folder destination folder that already exists
      * @return filepath
      */
     public String toClassFile(String folder) {
         String fileName = Paths.get(folder, sClass.getShortName() + ".class").toString();
+        String fileJavaName = Paths.get(folder, sClass.getShortName() + "java.class").toString();
         try {
             this.toBytecode(new FileOutputStream(fileName));
+            // MODIF BENJA : mais finalement ne semble rien apporter de plus que toBytecode
+            //this.toJavacode(new FileOutputStream(fileJavaName));
         } catch (FileNotFoundException e) {
             logger.error("File {}", fileName, e);
         }
@@ -101,17 +118,20 @@ public class Mutant {
 
     /**
      * Build the bytecode of the class in memory
+     *
      * @return bytecode of the class as an array or byte
      */
     public byte[] toClass() {
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
         this.toBytecode(stream);
+        this.toJavacode(stream);
         byte[] classContent = stream.toByteArray();
         return classContent;
     }
 
     /**
      * Generate Jimple to output stream. Does not close output stream.
+     *
      * @param stream output
      */
     public void toJimple(OutputStream stream) {
@@ -122,8 +142,9 @@ public class Mutant {
 
     /**
      * Save class to a plaintext jimple file
-     * @param  folder destination folder
-     * @return        filepath
+     *
+     * @param folder destination folder
+     * @return filepath
      */
     public String toJimpleFile(String folder) {
         String fileName = Paths.get(folder, sClass.getShortName() + ".jimple").toString();
@@ -154,13 +175,16 @@ public class Mutant {
 
     /**
      * Load a class from SootClassPath folders, remove CastExpr, validate and return Mutant
+     *
      * @param classname in java.lang.Object format
      * @return
      */
     public static Mutant loadClass(String classname) {
         SootClass sClass = Scene.v().loadClassAndSupport(classname);
+
         sClass.setApplicationClass();
         Iterator<SootMethod> iterMethods = sClass.methodIterator();
+
         while (iterMethods.hasNext()) {
             SootMethod m = iterMethods.next();
             // Load method body
@@ -168,9 +192,9 @@ public class Mutant {
             // Remove soot CastExpr from units
             for (Unit u : m.getActiveBody().getUnits()) {
                 if (u instanceof AssignStmt) {
-                    AssignStmt uA = (AssignStmt)u;
+                    AssignStmt uA = (AssignStmt) u;
                     if (uA.getRightOp() instanceof CastExpr) {
-                        CastExpr cExpr = (CastExpr)uA.getRightOp();
+                        CastExpr cExpr = (CastExpr) uA.getRightOp();
                         uA.setRightOp(cExpr.getOp());
                     }
                 }

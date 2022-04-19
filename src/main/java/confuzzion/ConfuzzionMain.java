@@ -96,6 +96,7 @@ public class ConfuzzionMain {
             ConfuzzionOptions.v().use_uniform_distribution_for_methods = line.hasOption("uniform-methods-distribution");
             ConfuzzionOptions.v().quiet = line.hasOption("q");
 
+
             if (!Files.exists(resultFolder)) {
                 Files.createDirectories(resultFolder);
             }
@@ -313,7 +314,7 @@ public class ConfuzzionMain {
             try {
                 try {
                     Files.createDirectories(tmpFolder);
-                } catch(IOException e2) {
+                } catch (IOException e2) {
                     logger.error("Printing last program generated:\n{}", currentProg.toString(), e2);
                     return;
                 }
@@ -324,7 +325,7 @@ public class ConfuzzionMain {
                     currentProg.genAndLaunch(timeout);
                 }
                 currentProg.removeContractsChecks(bodyMutations);
-            } catch(Throwable e) {
+            } catch (Throwable e) {
                 Throwable cause = Util.getCause(e);
                 if (cause instanceof ContractCheckException) {
                     logger.error("Seed already contains a contract check failure", cause);
@@ -379,13 +380,15 @@ public class ConfuzzionMain {
             }
 
             // Add contracts checks
-            ArrayList<BodyMutation> contractsMutations =
-                    currentProg.addContractsChecks(contracts, mutation);
+            //ArrayList<BodyMutation> contractsMutations =
+            //        currentProg.addContractsChecks(contracts, mutation);
             // Save current classes to unique folder
             Path folder = Paths.get(
                     resultFolder.toAbsolutePath().toString(),
                     loop1 + "-" + mutation.getClass().getSimpleName());
-            Boolean keepFolder = false;
+            // MODIF BENJA
+            //Boolean keepFolder = false;
+            Boolean keepFolder = true;
             int loop2 = 0;
             Status status = Status.NOTEXECUTED;
             try {
@@ -393,7 +396,7 @@ public class ConfuzzionMain {
                 if (withJVM) {
                     try {
                         Files.createDirectories(folder);
-                    } catch(IOException e2) {
+                    } catch (IOException e2) {
                         logger.error("Printing last program generated:\n{}", currentProg.toString(), e2);
                         break;
                     }
@@ -406,7 +409,7 @@ public class ConfuzzionMain {
                         } else { //with threads
                             currentProg.genAndLaunch(timeout);
                         }
-                    } catch(Throwable e2) {
+                    } catch (Throwable e2) {
                         Throwable cause = Util.getCause(e2);
                         if (cause instanceof ContractCheckException || loop2 == constants_tries - 1) {
                             loop2++;
@@ -418,11 +421,11 @@ public class ConfuzzionMain {
                 }
 
                 // Remove contracts checks for next turn
-                currentProg.removeContractsChecks(contractsMutations);
+                //currentProg.removeContractsChecks(contractsMutations);
                 // Add mutation to the stack
                 mutationsStack.push(mutation);
                 status = Status.SUCCESS;
-            } catch(Throwable e) {
+            } catch (Throwable e) {
                 logger.warn("Exception while executing program", e);
                 Throwable cause = Util.getCause(e);
                 if (cause instanceof ContractCheckException) {
@@ -431,7 +434,7 @@ public class ConfuzzionMain {
                         try {
                             Files.createDirectories(folder);
                             currentProg.saveAsClassFiles(folder.toString());
-                        } catch(IOException e2) {
+                        } catch (IOException e2) {
                             logger.error("Printing last program generated:\n{}", currentProg.toString(), e2);
                             break;
                         }
@@ -454,21 +457,21 @@ public class ConfuzzionMain {
                     status = Status.CRASHED;
                 }
                 // Remove contracts checks
-                currentProg.removeContractsChecks(contractsMutations);
+                //currentProg.removeContractsChecks(contractsMutations);
                 // Bad sample, revert mutation
                 mutation.undo();
             } finally {
                 // Update status screen
                 statusScreen.newMutation(mutation.getClass(), status, loop2);
                 if (mutation instanceof CallMethodMutation) {
-                    CallMethodMutation cmm = (CallMethodMutation)mutation;
+                    CallMethodMutation cmm = (CallMethodMutation) mutation;
                     rand.addMethodCallStatus(cmm.getCalledMethod(), status == Status.SUCCESS || status == Status.VIOLATES);
                 }
                 if (withJVM && !keepFolder) {
                     // Remove folder
                     try {
                         Util.deleteDirectory(folder);
-                    } catch(IOException e2) {
+                    } catch (IOException e2) {
                         logger.error("Error while deleting directory {}", folder, e2);
                         break;
                     }
@@ -478,7 +481,7 @@ public class ConfuzzionMain {
             if ((statusScreen.isStalled() && mutationsStack.size() > 0) || mutationsStack.size() >= stackLimit) {
                 // Revert a random number of mutations
                 int toRevert = rand.nextUint(mutationsStack.size());
-                while(toRevert-- > 0) {
+                while (toRevert-- > 0) {
                     mutationsStack.pop().undo();
                 }
                 // Refresh stack size on status screen

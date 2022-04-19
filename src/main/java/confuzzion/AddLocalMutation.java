@@ -1,9 +1,6 @@
 package confuzzion;
 
-import soot.Local;
-import soot.PrimType;
-import soot.SootMethod;
-import soot.Type;
+import soot.*;
 import soot.jimple.Jimple;
 
 /**
@@ -40,9 +37,10 @@ public class AddLocalMutation extends MethodMutation {
             mutation.addUnit(Jimple.v().newAssignStmt(local, rand.randConstant(type)));
         } else {
             // Reference of an object
-            addedLocal = this.genObject(method.getActiveBody(), type.toString());
+            //addedLocal = this.genObject(method.getActiveBody(), type.toString());
         }
     }
+
 
     /**
      * Get the added local
